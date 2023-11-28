@@ -1,0 +1,50 @@
+This is a guide to add domains to digital ocean
+
+1 - Create a droplet
+2 - Create domain in network tab and link to your droplet
+3 - Copy DO Name servers in your domain registrar, there you need to add the host too(droplet ip)
+4 - Important -
+	Add A record in the *Domain registrar*
+		- host => www for main domain and ip to droplet ip address 
+		- subdomain => Not really sure, if host A record is already added, i guess digitalocean will take care it, meaning you can simply create A record in digitalocean setup
+
+	If Only Link Subdomain to digitalocean, not the domain
+	Add A record in *Domain Registrar*
+		- host => subdomain(eg - api), ip to droplet ip
+5 -	Setup the firewall 
+	 ufw enable
+	 ufw status
+	 ufw allow ssh (Port 22)
+	 ufw allow http (Port 80)
+	 ufw allow https (Port 443)
+	 ufw allow 3000 (Your software port)
+6 - Setup Nginx
+	Follow these commands
+
+	- apt install nginx
+
+	# Configure Nginx for Subdomain
+	- nano /etc/nginx/sites-available/api(subdomain name)
+		# Inside the file:
+		server {
+		    listen 80;
+		    server_name api.google.co(subdomain_name);
+
+		    location / {
+		        proxy_pass http://127.0.0.1:3000(Port your software is hosted);
+		        proxy_http_version 1.1;
+		        proxy_set_header Upgrade $http_upgrade;
+		        proxy_set_header Connection 'upgrade';
+		        proxy_set_header Host $host;
+		        proxy_cache_bypass $http_upgrade;
+		    }
+		}
+
+	# Create a symbolic link to enable the site configuration
+	sudo ln -s /etc/nginx/sites-available/api /etc/nginx/sites-enabled
+	
+	# Check if your Nginx configuration is correct:
+	nginx -t
+
+	# If successfull(test using this)
+	systemctl restart nginx
